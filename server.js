@@ -4,6 +4,7 @@
  * Also supports `npm run check` (`node server.js --check`) for environment verification.
  */
 
+const path = require('path');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -148,14 +149,6 @@ function createApp({ demoMode = config.demoMode } = {}) {
       },
     })
   );
-
-  // Friendly health/welcome route so opening http://127.0.0.1:3000 in a browser works cleanly
-  app.get('/', (req, res) => {
-    res.json({
-      status: 'ok',
-      message: 'Secure Chatroom API is running. Use /api/* endpoints.',
-    });
-  });
 
   // POST /api/register - creates a user with username + password only (no PII)
   app.post('/api/register', async (req, res, next) => {
@@ -579,6 +572,17 @@ function createApp({ demoMode = config.demoMode } = {}) {
       }
     });
   }
+
+  // Serve static frontend files AFTER /api routes so unknown /api/* paths still return JSON 404
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  // Fallback health/welcome route if public/index.html is not present
+  app.get('/', (req, res) => {
+    res.json({
+      status: 'ok',
+      message: 'Secure Chatroom API is running. Use /api/* endpoints.',
+    });
+  });
 
   // 404 fallback
   app.use((req, res) => {

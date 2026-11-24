@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Chatroom — BIT3360</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="container">
+    <!-- Initial loading state while checking existing session via GET /api/me -->
+    <section id="loading-view" class="card center-card">
+      <p class="muted">Checking session...</p>
+    </section>
+
+    <!-- Logged-out view: Login / Create account -->
+    <section id="auth-view" class="card auth-card" hidden>
+      <header class="auth-header">
+        <h1>Secure Chatroom</h1>
+        <p class="muted">BIT3360 Database Security Demo</p>
+      </header>
+
+      <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+        <button id="tab-login" type="button" class="tab-btn active" role="tab" aria-selected="true">
+          Login
+        </button>
+        <button id="tab-register" type="button" class="tab-btn" role="tab" aria-selected="false">
+          Create account
+        </button>
+      </div>
+
+      <div id="auth-alert" class="alert" role="alert" hidden></div>
+
+      <form id="auth-form" class="stack" novalidate>
+        <div class="field">
+          <label for="auth-username">Username</label>
+          <input
+            id="auth-username"
+            name="username"
+            type="text"
+            minlength="3"
+            maxlength="30"
+            autocomplete="username"
+            required
+          >
+          <small class="hint">3–30 characters: letters, digits, and underscore (_) only.</small>
+        </div>
+
+        <div class="field">
+          <label for="auth-password">Password</label>
+          <input
+            id="auth-password"
+            name="password"
+            type="password"
+            minlength="8"
+            maxlength="72"
+            autocomplete="current-password"
+            required
+          >
+          <small class="hint">8–72 characters (not empty or whitespace only).</small>
+        </div>
+
+        <button id="auth-submit" type="submit" class="btn btn-primary">
+          Login
+        </button>
+      </form>
+    </section>
+
+    <!-- Logged-in view: Chatroom -->
+    <section id="chat-view" class="chat-shell" hidden>
+      <header class="card chat-header">
+        <div>
+          <h1>Secure Chatroom</h1>
+          <p class="muted">
+            Signed in as <strong id="current-username"></strong>
+          </p>
+        </div>
+        <button id="logout-btn" type="button" class="btn btn-secondary">Logout</button>
+      </header>
+
+      <div id="chat-alert" class="alert" role="alert" hidden></div>
+
+      <form id="message-form" class="card composer" novalidate>
+        <label for="message-input" class="sr-only">New message</label>
+        <textarea
+          id="message-input"
+          rows="3"
+          maxlength="500"
+          placeholder="Write a message (max 500 characters)..."
+        ></textarea>
+        <div class="composer-bar">
+          <span id="char-counter" class="muted">0 / 500</span>
+          <button id="send-btn" type="submit" class="btn btn-primary" disabled>
+            Send
+          </button>
+        </div>
+      </form>
+
+      <section class="card messages-panel" aria-label="Chat messages">
+        <p id="messages-empty" class="muted empty-state" hidden>
+          No messages yet. Start the conversation!
+        </p>
+        <ul id="messages-list" class="messages-list"></ul>
+        <div class="load-more-wrap">
+          <button id="load-more-btn" type="button" class="btn btn-secondary" hidden>
+            Load more
+          </button>
+        </div>
+      </section>
+
+      <footer class="security-footer">
+        Passwords are hashed, queries are parameterised, and your actions are audit-logged.
+      </footer>
+    </section>
+  </main>
+</body>
+</html>

@@ -51,7 +51,7 @@ A simplified, localhost-only **JSON REST API** built with Node.js, Express, `mys
 
 | Method | Endpoint | Auth | Purpose |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/` | Public | Health check (`{"status":"ok",...}`) |
+| `GET` | `/` | Public | Serves the web frontend (`public/index.html`) |
 | `POST` | `/api/register` | Public | Register with `username` + `password` only |
 | `POST` | `/api/login` | Public | Login, regenerate session, enforce lockout |
 | `POST` | `/api/logout` | Required (`401`) | Destroy session & clear cookie |
@@ -111,6 +111,40 @@ curl -b cookies.txt -X POST http://127.0.0.1:3000/api/logout
 | **Central error handler & disabled `X-Powered-By`** | [server.js](file:///home/majata/Desktop/CHATIE/server.js) | **Information leakage** |
 | **SQL-level ownership check (`WHERE id = ? AND user_id = ?`)** | [server.js](file:///home/majata/Desktop/CHATIE/server.js) (`PUT`/`DELETE /api/messages/:id`) | **Unauthorized access** (IDOR) |
 | **Append-only `audit_log` (`chat_app` has `INSERT` only)** | [setup.sql](file:///home/majata/Desktop/CHATIE/setup.sql), [server.js](file:///home/majata/Desktop/CHATIE/server.js) (`writeAuditLog`) | **Privilege abuse** (log tampering), missing audit trail |
+
+---
+
+## Frontend
+
+The project includes a plain HTML/CSS/vanilla JS single-page frontend in `public/` ([index.html](file:///home/majata/Desktop/CHATIE/public/index.html), [style.css](file:///home/majata/Desktop/CHATIE/public/style.css), [app.js](file:///home/majata/Desktop/CHATIE/public/app.js)) served directly by Express on the same origin.
+
+### How to Open
+1. Start the server: `npm start`
+2. Open `http://127.0.0.1:3000` in your browser.
+3. Log in with any sample account (`alice` / `AlicePass123!`, `bob` / `BobPass123!`, or `charlie` / `CharliePass123!`) or create a new account.
+
+### Frontend Security Measures
+
+| Frontend Measure | Where Implemented | Threat Prevented |
+| :--- | :--- | :--- |
+| **Safe DOM rendering (`textContent` only, no `innerHTML`/`eval`)** | [public/app.js](file:///home/majata/Desktop/CHATIE/public/app.js) | **Stored XSS** |
+| **External script/style only (no inline `<script>`, `<style>`, or `onclick=`)** | [public/index.html](file:///home/majata/Desktop/CHATIE/public/index.html), [public/app.js](file:///home/majata/Desktop/CHATIE/public/app.js) | **XSS** (strict CSP compatible) |
+| **No `localStorage`/`sessionStorage`/JS cookies; relies on `httpOnly` cookie** | [public/app.js](file:///home/majata/Desktop/CHATIE/public/app.js) (`credentials: 'same-origin'`) | **Token/session theft** |
+| **Password field cleared after every submit & `autocomplete` hints** | [public/app.js](file:///home/majata/Desktop/CHATIE/public/app.js), [public/index.html](file:///home/majata/Desktop/CHATIE/public/index.html) | **Shoulder surfing / stale credentials** |
+| **Submit buttons disabled while in flight** | [public/app.js](file:///home/majata/Desktop/CHATIE/public/app.js) | **Duplicate submissions / race conditions** |
+| **Friendly status error handling without raw stack/SQL details** | [public/app.js](file:///home/majata/Desktop/CHATIE/public/app.js) (`getFriendlyError`) | **Information leakage** |
+
+### Manual Test Checklist
+- [ ] **Register:** Switch to *Create account*, register a new user (e.g. `diana_99` / `DianaPass123!`), confirm redirect to Login with success notice.
+- [ ] **Login:** Log in with `alice` / `AlicePass123!` and confirm chat view loads with messages.
+- [ ] **Wrong password:** Log out, try `bob` with a wrong password, confirm generic `"Invalid username or password"` error and password input cleared.
+- [ ] **Account lockout:** Fail login 5 times for `charlie`, confirm HTTP `423` lockout message appears and stays locked even with the right password.
+- [ ] **Post message:** Post a new message, confirm live character counter works (`0 / 500`) and Send disables when empty.
+- [ ] **Edit own message:** Click *Edit* on your own message, save changes, confirm `"edited"` badge appears.
+- [ ] **Other users' messages:** Confirm *Edit* and *Delete* buttons do **not** appear on messages owned by other users.
+- [ ] **XSS test string:** Post `<script>alert(1)</script> <img src=x onerror=alert(1)>` and confirm it displays literally as plain text with no alert popup.
+- [ ] **Logout:** Click *Logout*, confirm return to Login view and refreshing the page stays logged out.
+- [ ] **Expired session:** While logged in, restart `npm start` (or clear cookie) and click *Send* or wait for refresh; confirm return to Login view with session-expired notice.
 
 ---
 
